@@ -1,0 +1,41 @@
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <stdlib.h>
+#include <string.h>
+
+int main(int argc,int argv[])
+{
+	int sock=socket(AF_INET,SOCK_DGRAM,0);  //创建套接字
+	if(sock<0)
+	{
+		perror("socket");
+		return 2;
+	}
+	struct sockaddr_in server;
+	server.sin_family=AF_INET;
+	server.sin_port=htons(atoi(argv[2]));
+	server.sin_addr.s_addr=inet_addr(argv[1]);
+	
+	int band=bind(sock,(struct sockaddr*)&server,sizeof(server));  //绑定套接字
+	if(band<0)
+	{
+		perror("band");
+		return 3;
+	}
+
+	char buf[1024];
+	struct sockaddr_in client;
+	while(1){
+		socklen_t len=sizeof(client);
+		ssize_t s=recvfrom(sock,buf,sizeof(buf)-1,0,(struct sockaddr*)&client,&len);  //从客户端接收消息
+		if(s>0)
+		{
+			buf[s]=0;
+			printf("[%s:%d]:%s\n",inet_ntoa(client.sin_addr),ntohs(client.sin_port),buf);  //显示客户端信息及消息
+			sendto(sock,buf,strlen(buf),0,(struct sockaddr*)&client,sizeof(client));  //给客户端发送消息
+		}
+	}
+	return 0;
+}

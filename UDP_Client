@@ -1,0 +1,42 @@
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <stdlib.h>
+#include <arpa/inet.h>
+#include <string.h>
+
+int main(int argc,int argv[])
+{
+	int sock=socket(AF_INET,SOCK_DGRAM,0);  //创建套接字
+	if(sock<0)
+	{
+		perror("sock");
+		return 2;
+	}
+	struct sockaddr_in server;  //连接服务器时，所需要的IP地址与端口号
+	server.sin_family=AF_INET;
+	server.sin_port=htons(atoi(argv[2]));
+	server.sin_addr.s_addr=inet_addr(argv[1]);
+
+	char buf[1024];
+	struct sockaddr_in client;
+	while(1)
+	{
+		socklen_t len=sizeof(client);
+		printf("Please Enter$ ");
+		fflush(stdout);
+		ssize_t s=read(0,buf,sizeof(buf)-1);  //从键盘读到缓冲区
+		if(s>0)
+		{
+			buf[s-1]=0;
+			sendto(sock,buf,strlen(buf),0,(struct sockaddr*)&server,sizeof(server));  //给服务器发送消息
+			ssize_t _s=recvfrom(sock,buf,sizeof(buf)-1,0,(struct sockaddr*)&server,&len); //本例是自言自语，接收的相当于自己的消息
+			if(_s>0)
+			{
+				buf[_s]=0;
+				printf("server echo# %s\n",buf);
+			}
+		}
+	}
+	return 0;
+}
